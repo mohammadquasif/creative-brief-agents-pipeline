@@ -128,26 +128,51 @@ def frame(lines: list[tuple[str, str]]) -> Image.Image:
     return img
 
 
+#: per-line "dwell" in ms for each kind — slow enough to read comfortably.
+#: (These are per-frame durations; a 1x GIF plays them back at face value.)
+_DWELL_MS: dict[str, int] = {
+    "p": 700,      # a command being typed / run
+    "o": 280,      # quick server output lines
+    "i": 360,      # a JSON section header
+    "v": 560,      # a data line — give it time to read
+    "done": 2400,  # final success banner
+}
+
+
+def _dwell(entry: tuple[str, str]) -> int:
+    kind, text = entry
+    base = _DWELL_MS.get(kind, 300)
+    if not text.strip():
+        return 120                     # blank spacer line: barely a beat
+    # longer lines deserve a touch more time (up to ~1.3x)
+    if len(text) > 80:
+        base = int(base * 1.3)
+    return base
+
+
 def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    # progressive reveal: show one more script line per frame; dwell on final
+    # progressive reveal: show one more script line per frame
     frames: list[Image.Image] = []
+    durations: list[int] = []
     visible: list[tuple[str, str]] = []
     for entry in SCRIPT:
         visible.append(entry)
         frames.append(frame(list(visible)))
+        durations.append(_dwell(entry))
 
-    # linger on the last two frames so people can read the output
-    frames.append(frame(list(visible)))
-    frames.append(frame(list(visible)))
+    # linger on the final state so people can read the full output
+    for _ in range(4):
+        frames.append(frame(list(visible)))
+        durations.append(1100)
 
-    # GIF: ~50ms per frame with a longer hold for the reveal dwell
-    delays = [140] * max(0, len(frames) - 3) + [900, 900, 900]
     frames[0].save(
         OUT, save_all=True, append_images=frames[1:],
-        duration=delays, loop=0, disposal=2,
+        duration=durations, loop=0, disposal=2,
     )
-    print(f"wrote {OUT}  ({len(frames)} frames, {OUT.stat().st_size // 1024} KB)")
+    total_s = sum(durations) / 1000
+    print(f"wrote {OUT}  ({len(frames)} frames, ~{total_s:.1f}s loop, "
+          f"{OUT.stat().st_size // 1024} KB)")
 
 
 if __name__ == "__main__":
