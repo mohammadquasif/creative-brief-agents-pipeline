@@ -154,7 +154,59 @@ Open <http://127.0.0.1:8000/api/v1/health> — you should see `{"status":"ok","p
 
 ---
 
-## 💬 How to provide a brief (give it input)
+## � Without AI vs 🤖 With AI — two run modes
+
+The same API runs on two interchangeable "brains". **The default is *without AI* —
+deterministic and fully offline** (no key, free, identical output every run).
+Optionally switch to **OpenAI** for richer, model-written copy. Either way, the
+validation → retry → fallback → error gate behaves identically.
+
+| | 🚫 Local (no AI) | 🤖 OpenAI (with AI) |
+|---|---|---|
+| **API key** | none | required |
+| **Network / cost** | offline · free | online · per-call |
+| **Output** | deterministic templates | varied, natural language |
+| **Extra install** | — | `requirements-optional.txt` |
+| **`LLM_PROVIDER`** | `local` *(default)* | `openai` |
+| **`meta.provider`** shows | `"local"` | `"openai"` |
+
+### 🚫 Run without AI (default — nothing to configure)
+
+```bash
+pip install -r requirements-dev.txt
+python run.py
+# health: {"status":"ok","provider":"local"}
+```
+
+### 🤖 Run with AI (OpenAI)
+
+```bash
+# 1) extra dependency
+pip install -r requirements-optional.txt
+
+# 2) create the env file
+Copy-Item .env.example .env        # Windows PowerShell
+# cp .env.example .env              # macOS / Linux
+```
+
+```ini
+# .env — set the provider + your key
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini     # optional
+PARSER_RETRIES=2             # optional: repair passes the gate may request
+```
+
+```bash
+# 3) restart → provider: "openai"
+python run.py
+```
+
+> 🔒 `.env` is git-ignored — never commit your key.
+
+---
+
+## �💬 How to provide a brief (give it input)
 
 Three ways — all hit the same `POST /api/v1/generate` endpoint:
 
@@ -210,7 +262,9 @@ tone words & synonyms (`"hype energy"`, `"high end"`, `"eco friendly"`, …).
 
 ---
 
-## 🔑 Optional: set up the OpenAI API key (richer creative copy)
+## 🔑 Optional: use AI — OpenAI API key
+
+> Full side-by-side steps are in **“Without AI vs With AI”** above; this is the key-only recap.
 
 The default **local** brain needs no key. To use a hosted LLM instead:
 

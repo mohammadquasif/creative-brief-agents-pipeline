@@ -653,6 +653,7 @@ flowchart LR
 
 ## 19. Appendix — How to Run
 
+### Without AI (default — deterministic, offline)
 ```bash
 python -m pip install -r requirements-dev.txt
 python run.py                      # or: PORT=8001 python run.py
@@ -661,10 +662,20 @@ python run.py                      # or: PORT=8001 python run.py
 python -m pytest                   # 17 tests
 ```
 
-Optional hosted brain:
+### With AI (OpenAI — richer copy)
+```bash
+pip install -r requirements-optional.txt
 ```
+```ini
 # .env  (copy from .env.example)
 LLM_PROVIDER=openai
 OPENAI_API_KEY=sk-...
-pip install -r requirements-optional.txt
+OPENAI_MODEL=gpt-4o-mini     # optional
+PARSER_RETRIES=2             # optional: repair passes the gate may request
 ```
+```bash
+python run.py                # restart → provider "openai"
+```
+
+> Both modes share the same endpoint and the same validate → retry → fallback
+> → error gate; only the underlying "brain" changes.

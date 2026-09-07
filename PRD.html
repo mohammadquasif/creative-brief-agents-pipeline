@@ -642,16 +642,23 @@
     <!-- 19 -->
     <div class="card" id="s19">
       <h2><span class="n">19.</span>Appendix — How to Run</h2>
+      <h3>🚫 Without AI (default — deterministic, offline)</h3>
 <pre>python -m pip install -r requirements-dev.txt
 python run.py                      # or: PORT=8001 python run.py
 # Docs:   http://127.0.0.1:8000/docs    (or :8001)
 # Health: http://127.0.0.1:8000/api/v1/health
 python -m pytest                   # 17 tests</pre>
-      <p>Optional hosted brain:</p>
-<pre># .env  (copy from .env.example)
+      <h3>🤖 With AI (OpenAI — richer copy)</h3>
+<pre>pip install -r requirements-optional.txt
+# .env  (copy from .env.example):
 LLM_PROVIDER=openai
 OPENAI_API_KEY=sk-...
-pip install -r requirements-optional.txt</pre>
+OPENAI_MODEL=gpt-4o-mini     # optional
+PARSER_RETRIES=2             # optional
+
+python run.py                # restart → provider "openai"</pre>
+      <p class="note">Both modes share the same endpoint and the same validate → retry →
+      fallback → error gate; only the underlying “brain” changes.</p>
     </div>
 
     <footer>PRD · Creative Brief Agent Pipeline · §1–§15 v1.0 implemented · §16–§17 v1.1 design annex ·
