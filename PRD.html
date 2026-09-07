@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD — Creative Brief Agent Pipeline</title>
+<style>
+  :root{
+    --bg:#0d1020; --panel:#151a30; --panel2:#1b2140; --ink:#e9ecf7;
+    --muted:#98a2c6; --line:#2b335c; --accent:#7aa2ff; --accent2:#ff8fc8;
+    --v1:#34d399; --v11:#fbbf24; --danger:#f87171;
+    --mono:"Cascadia Code",Consolas,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{padding:30px 34px 22px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#141936,#0d1020)}
+  header h1{margin:0 0 8px;font-size:27px;letter-spacing:.2px}
+  header p{margin:4px 0;color:var(--muted);max-width:960px}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .badge{background:#11162c;border:1px solid var(--line);border-radius:999px;
+    padding:3px 12px;font-size:12.5px;color:var(--ink)}
+  .badge b{color:var(--accent)}
+  .wrap{display:flex;gap:26px;align-items:flex-start;max-width:1440px;margin:0 auto;padding:24px}
+  nav{position:sticky;top:16px;width:250px;flex:0 0 250px;font-size:13px}
+  nav .grp{font-weight:800;color:var(--accent2);text-transform:uppercase;
+    font-size:10.5px;letter-spacing:1.3px;margin:14px 0 5px}
+  nav a{display:block;color:var(--muted);text-decoration:none;padding:3px 8px;
+    border-left:2px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  nav a:hover{color:var(--ink);border-left-color:var(--accent)}
+  nav .v11::after{content:"v1.1";margin-left:6px;font-size:9.5px;color:var(--v11);
+    border:1px solid var(--v11);border-radius:6px;padding:0 4px;vertical-align:middle}
+  main{flex:1;min-width:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:18px 22px;margin:0 0 16px}
+  h2{font-size:21px;margin:26px 0 2px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  h2 .n{color:var(--accent2);margin-right:6px}
+  h2 .pill{font-size:11px;font-weight:600;vertical-align:middle;border-radius:6px;
+    padding:2px 8px;margin-left:8px}
+  .pill.v1{color:#04231a;background:var(--v1)}
+  .pill.v11{color:#3b2503;background:var(--v11)}
+  h3{font-size:16px;margin:18px 0 8px;color:#cdd6f2}
+  p{margin:8px 0}
+  ul{margin:8px 0;padding-left:22px}
+  li{margin:3px 0}
+  code{font-family:var(--mono);font-size:12.5px;background:#0e1226;border:1px solid var(--line);
+    border-radius:5px;padding:1px 5px;color:#bcd0ff}
+  pre{font-family:var(--mono);font-size:12.5px;line-height:1.5;color:#d7e3ff;
+    background:#0a0d1f;border:1px solid var(--line);border-radius:8px;
+    padding:12px 14px;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13.5px}
+  th{background:var(--panel2);color:#dfe6ff;text-align:left;padding:8px 10px;
+    border:1px solid var(--line);font-size:12.5px;letter-spacing:.3px}
+  td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#12172e}
+  blockquote{border-left:4px solid var(--accent);margin:12px 0;padding:6px 14px;
+    background:#12172e;border-radius:0 8px 8px 0;color:var(--muted)}
+  .note{font-size:13px;color:var(--muted)}
+  /* ---- flow rendering ---- */
+  .flow{display:flex;flex-direction:column;align-items:center;margin:14px 0}
+  .node{min-width:200px;max-width:560px;text-align:center;border-radius:10px;
+    padding:9px 14px;border:1px solid var(--line);background:var(--panel2);font-size:13.5px}
+  .node b{color:#fff}
+  .node .fn{display:block;font-family:var(--mono);font-size:11px;color:var(--accent);margin-top:2px}
+  .node.gate{border-color:var(--accent)}
+  .node.gen{border-color:var(--accent2)}
+  .node.err{border-color:var(--danger);background:#2a1424}
+  .node.v11node{border-style:dashed;border-color:var(--v11)}
+  .edge{color:var(--muted);font-size:11.5px;padding:2px 0;text-align:center;font-family:var(--mono)}
+  .branch{display:flex;gap:18px;justify-content:center;align-items:flex-start;margin:4px 0}
+  .col{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;max-width:420px}
+  .verdict{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:1px 8px;margin:4px}
+  .verdict.ok{background:#0c2b1f;color:var(--v1);border:1px solid var(--v1)}
+  .verdict.fail{background:#3a0f0f;color:var(--danger);border:1px solid var(--danger)}
+  .arrow{color:var(--muted);font-size:16px;text-align:center;line-height:1}
+  @media(max-width:980px){.wrap{flex-direction:column}nav{position:static;width:100%}}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:22px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header>
+  <h1>📘 PRD — Creative Brief Agent Pipeline</h1>
+  <p>Product Requirements Document · two-agent workflow (Parser → Validation Gate → Generator)
+  wrapped in FastAPI. v1.0 <em>implemented</em> · v1.1 <em>design annexed</em> (§16 Brand Guidelines,
+  §17 Retraining). Generated 2026-09-07.</p>
+  <div class="badges">
+    <span class="badge"><b>Stack:</b> Python 3.13 · FastAPI · Pydantic v2 · Uvicorn</span>
+    <span class="badge"><b>Type:</b> Internal service / API</span>
+    <span class="badge"><b>19</b> sections</span>
+    <span class="badge"><span class="pill v1">v1.0 built</span> <span class="pill v11">v1.1 planned</span></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav>
+    <div class="grp">Requirements</div>
+    <a href="#s1">1 · Executive Summary</a>
+    <a href="#s2">2 · Problem Statement</a>
+    <a href="#s3">3 · Goals &amp; Non-Goals</a>
+    <a href="#s4">4 · Target Users &amp; Personas</a>
+    <a href="#s5">5 · Product Definition</a>
+    <a href="#s6">6 · System Architecture</a>
+    <a href="#s7">7 · The Validation Gate</a>
+    <a href="#s8">8 · API Specification</a>
+    <a href="#s9">9 · Configuration &amp; Brain</a>
+    <a href="#s10">10 · Functional Reqs</a>
+    <a href="#s11">11 · Non-Functional Reqs</a>
+    <a href="#s12">12 · Success Metrics</a>
+    <a href="#s13">13 · Edge Cases &amp; Decisions</a>
+    <a href="#s14">14 · Sample Flow Walkthrough</a>
+    <a href="#s15">15 · Test Strategy</a>
+    <div class="grp">v1.1 Design Annex</div>
+    <a href="#s16" class="v11">16 · Brand Guidelines</a>
+    <a href="#s17" class="v11">17 · Retraining &amp; Learning</a>
+    <div class="grp">Back matter</div>
+    <a href="#s18">18 · Open Questions &amp; Roadmap</a>
+    <a href="#s19">19 · Appendix — How to Run</a>
+  </nav>
+
+  <main>
+
+    <!-- 1 -->
+    <div class="card" id="s1">
+      <h2><span class="n">1.</span>Executive Summary</h2>
+      <p>Turn a <b>messy, one-paragraph creative brief</b> from a busy marketer into a
+      <b>structured, validated, ready-to-use creative asset</b> — with zero manual cleaning and the
+      hard guarantee that <b>bad data never flows silently downstream</b>.</p>
+      <ul>
+        <li><b>Agent 1 (Parser)</b> extracts structured fields (campaign, audience, key message, tone, deadline).</li>
+        <li><b>A validation gate</b> checks the output against a schema — <b>retry → fallback → explicit error</b>.</li>
+        <li><b>Agent 2 (Generator)</b> produces creative output and only ever sees schema-valid data.</li>
+      </ul>
+      <p class="note">Provider-agnostic: deterministic offline "brain" by default (no API keys, ideal for
+      demos/tests/CI); switchable to a hosted LLM via config.</p>
+    </div>
+
+    <!-- 2 -->
+    <div class="card" id="s2">
+      <h2><span class="n">2.</span>Problem Statement</h2>
+      <h3>The business problem</h3>
+      <ul>
+        <li><b>Inconsistent</b> — no shared template or field names.</li>
+        <li><b>Vague</b> — "gen z", "kinda hype energy", "by friday" carry implicit meaning.</li>
+        <li><b>Incomplete</b> — deadlines, names, audiences frequently missing.</li>
+        <li><b>Error-prone handoff</b> — humans re-key fields; tools silently receive bad data.</li>
+      </ul>
+      <h3>The product problem</h3>
+      <p>An AI that reads a brief and <i>directly</i> writes an ad will happily <b>hallucinate</b> on missing
+      input — inventing a fake deadline, guessing the wrong audience — with <b>no audit trail</b>.</p>
+      <h3>How we solve it</h3>
+      <p><b>Separate "reading" from "writing", put a quality gate between them.</b> Never guess
+      business-critical facts; fill only <i>safe</i> gaps with <i>recorded</i> defaults; otherwise
+      <b>fail loudly</b> with a structured error.</p>
+    </div>
+
+    <!-- 3 -->
+    <div class="card" id="s3">
+      <h2><span class="n">3.</span>Goals &amp; Non-Goals</h2>
+      <h3>3.1 Goals</h3>
+      <table>
+        <tr><th>#</th><th>Goal</th><th>Why it matters</th></tr>
+        <tr><td>G1</td><td>Parse free-form brief into a fixed schema</td><td>Consistent data downstream</td></tr>
+        <tr><td>G2</td><td>Never let invalid data reach the generator</td><td>Protects brand/creative quality</td></tr>
+        <tr><td>G3</td><td>Explicit, explainable failure</td><td>Users understand <i>why</i></td></tr>
+        <tr><td>G4</td><td>Deterministic default behavior (offline)</td><td>Zero-friction demo + CI</td></tr>
+        <tr><td>G5</td><td>Simple HTTP surface (<code>POST /generate</code>)</td><td>Easy integration</td></tr>
+        <tr><td>G6 <span class="pill v11">v1.1+</span></td><td><b>Follow brand guidelines</b> on every output</td><td>On-brand, on-message, every time</td></tr>
+        <tr><td>G7 <span class="pill v11">v1.1+</span></td><td><b>Learn &amp; retrain</b> from real usage</td><td>Quality improves without ad-hoc rewrites</td></tr>
+      </table>
+      <h3>3.2 Non-Goals (v1.0)</h3>
+      <ul>
+        <li>❌ Batch / bulk processing &nbsp;·&nbsp; ❌ Image/video assets &nbsp;·&nbsp; ❌ Human-in-the-loop UI</li>
+        <li>❌ Auth / multi-tenancy / rate limiting &nbsp;·&nbsp; ❌ Persistence (stateless) &nbsp;·&nbsp; ❌ Prompt-tuning UI</li>
+      </ul>
+    </div>
+
+    <!-- 4 -->
+    <div class="card" id="s4">
+      <h2><span class="n">4.</span>Target Users &amp; Personas</h2>
+      <table>
+        <tr><th>Persona</th><th>Description</th><th>Primary need</th></tr>
+        <tr><td><b>Creative Marketer</b> "Sam"</td><td>Writes briefs fast; wants an on-brand draft</td><td>Paste → usable, correctly-toned draft</td></tr>
+        <tr><td><b>Creative Ops / PM</b></td><td>Owns quality &amp; deadlines</td><td>Guaranteed validation; clear errors; audit trail</td></tr>
+        <tr><td><b>Engineering / API</b></td><td>Integrates into CMS / ad platforms</td><td>Stable JSON contract, documented errors</td></tr>
+        <tr><td><b>Developer (repo)</b></td><td>Extends agents / swaps model</td><td>Clean abstraction; deterministic tests, no key</td></tr>
+      </table>
+    </div>
+
+    <!-- 5 -->
+    <div class="card" id="s5">
+      <h2><span class="n">5.</span>Product Definition</h2>
+      <h3>5.1 The 5 structured fields (<code>CreativeBrief</code>)</h3>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Example</th><th>Business rule</th></tr>
+        <tr><td><code>campaign_name</code></td><td>str (2–120)</td><td>"Sneaker Drop Campaign"</td><td>Whitespace normalised</td></tr>
+        <tr><td><code>target_audience</code></td><td>str (2–120)</td><td>"Gen Z"</td><td>Who it's for</td></tr>
+        <tr><td><code>key_message</code></td><td>str (5–600)</td><td>"Limited pairs, no restocks."</td><td>Core message</td></tr>
+        <tr><td><code>tone</code></td><td>enum (9)</td><td>"hype"</td><td>Synonyms auto-normalised</td></tr>
+        <tr><td><code>deadline</code></td><td>date (≥ today)</td><td>2026-09-11</td><td>"friday" → next Friday. <b>Never fabricated</b></td></tr>
+      </table>
+      <p><b>Canonical tones:</b> <code>hype · luxury · playful · professional · emotional · sustainable ·
+      retro · minimal · edgy</code>.</p>
+      <p class="note"><b>Key rule:</b> past deadlines are rejected; a <i>missing</i> deadline is NOT
+      defaulted — it fails the gate (see §7).</p>
+      <h3>5.2 Creative output (<code>CreativeOutput</code>)</h3>
+      <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>ad_concept</code></td><td>One-line ad concept, tone-aware</td></tr>
+        <tr><td><code>social_caption</code></td><td>Ready-to-post caption (body + CTA + footer)</td></tr>
+        <tr><td><code>hashtags</code></td><td>Suggested hashtags from the validated brief</td></tr>
+      </table>
+      <h3>5.3 Audit trail (<code>RunMeta</code>)</h3>
+      <p class="note">Returned on every success: <code>provider</code>, <code>validation_attempts</code>,
+      <code>repair_passes</code>, <code>fallbacks_applied[]</code>.</p>
+    </div>
+
+    <!-- 6 -->
+    <div class="card" id="s6">
+      <h2><span class="n">6.</span>System Architecture</h2>
+      <p class="note">Monolithic deployment, <b>modular boundaries</b> — one FastAPI process, cleanly
+      separated responsibilities.</p>
+      <div class="flow">
+        <div class="node gate"><b>api/routes.py</b><span class="fn">POST /api/v1/generate · HTTP contract only</span></div>
+        <div class="edge">▼</div>
+        <div class="node gate"><b>services/pipeline.py</b><span class="fn">orchestration — order of ops only</span></div>
+        <div class="edge">▼ ────────── splits ──────────</div>
+        <div class="branch">
+          <div class="col"><div class="node"><b>agents/parser.py</b><span class="fn">Agent 1 · extract + repair</span></div></div>
+          <div class="col"><div class="node gate"><b>services/validation.py</b><span class="fn">THE GATE · validate→retry→fallback→error</span></div></div>
+          <div class="col"><div class="node gen"><b>agents/generator.py</b><span class="fn">Agent 2 · creative templating</span></div></div>
+        </div>
+        <div class="edge">▼</div>
+        <div class="node gate"><b>schemas/brief.py — CreativeBrief (Pydantic)</b><span class="fn">the schema that IS the gate</span></div>
+        <div class="edge">▼</div>
+        <div class="node gen"><b>llm/ — provider abstraction</b><span class="fn">LocalHeuristicProvider | OpenAIProvider</span></div>
+      </div>
+      <table>
+        <tr><th>Layer</th><th>Responsibility</th><th>Contains no</th></tr>
+        <tr><td><code>api/</code></td><td>HTTP contract, status codes, error mapping</td><td>business logic</td></tr>
+        <tr><td><code>services/pipeline.py</code></td><td>Order of operations, wiring</td><td>parsing/creative logic</td></tr>
+        <tr><td><code>services/validation.py</code></td><td>The escalation ladder (§7)</td><td>provider-specific code</td></tr>
+        <tr><td><code>agents/parser.py</code></td><td>Extraction + repair passes</td><td>orchestration</td></tr>
+        <tr><td><code>agents/generator.py</code></td><td>Creative templating from a <i>valid</i> brief</td><td>validation logic</td></tr>
+        <tr><td><code>schemas/brief.py</code></td><td>The schema that <i>is</i> the gate</td><td>side effects</td></tr>
+        <tr><td><code>llm/</code></td><td>Swappable "brain"</td><td>FastAPI concerns</td></tr>
+        <tr><td><code>core/</code></td><td>Config, logging, exceptions</td><td>feature logic</td></tr>
+      </table>
+    </div>
+
+    <!-- 7 -->
+    <div class="card" id="s7">
+      <h2><span class="n">7.</span>The Validation Gate <span class="note">(the heart of the product)</span></h2>
+      <p class="note">Enforces: <i>"Don't let bad data silently flow through."</i></p>
+      <h3>7.1 Escalation ladder</h3>
+      <div class="flow">
+        <div class="node"><b>Agent 1 output</b></div>
+        <div class="edge">▼</div>
+        <div class="node gate"><b>VALIDATE</b><span class="fn">Coerce dict → CreativeBrief (Pydantic) · collect field-level issues</span></div>
+        <div class="edge">▼ invalid?</div>
+        <div class="branch">
+          <div class="col">
+            <span class="verdict ok">✓ valid</span>
+            <div class="node gen"><b>Generator</b><span class="fn">valid brief only → 200 OK + RunMeta</span></div>
+          </div>
+          <div class="col">
+            <span class="verdict fail">✗ invalid</span>
+            <div class="node gate"><b>RETRY (repair pass)</b><span class="fn">≤ max_attempts · Parser.repair(issues) MERGED over prior (good fields kept)</span></div>
+            <div class="edge">▼ exhausted</div>
+            <div class="node gate"><b>FALLBACK — safe recorded defaults</b><span class="fn">tone→professional · audience→General · campaign→Untitled · key_message→generic ·<br><b>deadline is NEVER defaulted</b></span></div>
+            <div class="edge">▼ still broken?</div>
+            <div class="node err"><b>SURFACE — explicit 422</b><span class="fn">issues · attempts · fallbacks_applied</span></div>
+          </div>
+        </div>
+      </div>
+      <h3>7.2 Decision table</h3>
+      <table>
+        <tr><th>Situation</th><th>Behaviour</th></tr>
+        <tr><td>All fields valid first pass</td><td>✅ <code>200</code>, <code>validation_attempts:1</code></td></tr>
+        <tr><td>Field(s) broken</td><td>🔁 targeted repair pass(es) (max <code>PARSER_RETRIES</code>)</td></tr>
+        <tr><td>Repair fixes everything</td><td>✅ <code>200</code>, <code>repair_passes ≥ 1</code></td></tr>
+        <tr><td>Non-critical gap remains</td><td>🛟 recorded default; <code>fallbacks_applied[]</code></td></tr>
+        <tr><td><b>Deadline</b> missing/illegible</td><td>❌ <b>never defaulted</b> → <b>422</b></td></tr>
+        <tr><td>Deadline in the past</td><td>❌ rejected → <b>422</b></td></tr>
+        <tr><td>Parser returns nothing</td><td>❌ <b>422</b> "no structured data at all"</td></tr>
+        <tr><td>LLM provider down</td><td>❌ <b>503</b> <code>provider_unavailable</code></td></tr>
+      </table>
+    </div>
+
+    <!-- 8 -->
+    <div class="card" id="s8">
+      <h2><span class="n">8.</span>API Specification</h2>
+      <h3>8.1 Endpoints</h3>
+      <table>
+        <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+        <tr><td><code>POST</code></td><td><code>/api/v1/generate</code></td><td>Main flow: brief → creative</td></tr>
+        <tr><td><code>GET</code></td><td><code>/api/v1/health</code></td><td>Liveness + active provider</td></tr>
+        <tr><td><code>GET</code></td><td><code>/api/v1/provider</code></td><td>Which brain is powering agents</td></tr>
+        <tr><td><code>GET</code></td><td><code>/</code> and <code>/docs</code></td><td>Service info + Swagger UI</td></tr>
+      </table>
+      <h3>8.2 Request</h3>
+<pre>POST /api/v1/generate   Content-Type: application/json
+{
+  "raw_brief": "Need something for the new sneaker drop targeting gen z,
+                kinda hype energy, has to be ready by friday.",
+  "context": {}            // optional, reserved
+}</pre>
+      <h3>8.3 Responses</h3>
+      <p><span class="verdict ok">200 OK</span> success + audit trail</p>
+<pre>{
+  "validated_brief": {
+    "campaign_name": "Sneaker Drop Campaign",
+    "target_audience": "Gen Z",
+    "key_message": "The sneaker drop is live — limited pairs, no restocks...",
+    "tone": "hype",
+    "deadline": "2026-09-11"        // "friday" → next Friday
+  },
+  "creative": { "ad_concept": "...", "social_caption": "...",
+                "hashtags": ["#SneakerDropCampaign", "#GenZ", "#Hype", "..."] },
+  "meta": { "provider": "local", "validation_attempts": 1,
+            "repair_passes": 0, "fallbacks_applied": [] }
+}</pre>
+      <p><span class="verdict fail">422 Unprocessable</span> — two cases: (1) request-shape error (standard
+      FastAPI detail); (2) <b>business validation failure</b>:</p>
+<pre>{
+  "detail": {
+    "error": "brief_validation_failed",
+    "message": "Brief could not be validated after 3 attempt(s). Refusing to pass bad data...",
+    "issues": [ { "field": "deadline", "message": "Field required", "value": null } ],
+    "attempts": 3,
+    "fallbacks_applied": ["tone defaulted to 'professional'", "..."]
+  }
+}</pre>
+      <p><span class="verdict fail">503</span> — configured LLM provider unreachable.</p>
+    </div>
+
+    <!-- 9 -->
+    <div class="card" id="s9">
+      <h2><span class="n">9.</span>Configuration &amp; the Swappable "Brain"</h2>
+      <table>
+        <tr><th>Env var</th><th>Default</th><th>Purpose</th></tr>
+        <tr><td><code>LLM_PROVIDER</code></td><td><code>local</code></td><td><code>local</code> (deterministic) or <code>openai</code></td></tr>
+        <tr><td><code>OPENAI_API_KEY</code></td><td>—</td><td>Required only for <code>openai</code></td></tr>
+        <tr><td><code>OPENAI_MODEL</code></td><td><code>gpt-4o-mini</code></td><td>Model when provider is <code>openai</code></td></tr>
+        <tr><td><code>PARSER_RETRIES</code></td><td><code>2</code></td><td>Repair passes the gate may request</td></tr>
+        <tr><td><code>LOG_LEVEL</code></td><td><code>INFO</code></td><td>Logging verbosity</td></tr>
+        <tr><td><code>PORT</code></td><td><code>8000</code></td><td>Server port (<code>run.py</code>)</td></tr>
+      </table>
+      <p class="note"><b>Why two providers:</b> <code>local</code> is deterministic (identical input →
+      identical output, zero cost/network → reliable demos, CI, tests). <code>openai</code> runs the
+      <i>same</i> code path (retry genuinely re-prompts with prior errors), so switching brains changes
+      <i>capability, not guarantees</i>.</p>
+    </div>
+
+    <!-- 10 -->
+    <div class="card" id="s10">
+      <h2><span class="n">10.</span>Functional Requirements <span class="note">(traceable)</span></h2>
+      <table>
+        <tr><th>ID</th><th>Requirement</th><th>Verified by</th></tr>
+        <tr><td>FR-1</td><td>Accepts raw brief ≥5 and ≤5000 chars</td><td>API tests</td></tr>
+        <tr><td>FR-2</td><td>Agent 1 extracts the 5 <code>CreativeBrief</code> fields</td><td>unit tests</td></tr>
+        <tr><td>FR-3</td><td>Relative deadlines resolve ("friday" → next Friday ≥ today)</td><td>unit tests</td></tr>
+        <tr><td>FR-4</td><td>Tone synonyms normalise to canonical values</td><td>unit tests</td></tr>
+        <tr><td>FR-5</td><td>Past deadlines rejected by the schema</td><td>unit tests</td></tr>
+        <tr><td>FR-6</td><td>Invalid output triggers repair passes, merging over good fields</td><td>unit tests</td></tr>
+        <tr><td>FR-7</td><td>Safe gaps receive <i>recorded</i> defaults (never silent)</td><td>unit tests</td></tr>
+        <tr><td>FR-8</td><td>Missing/illegible <code>deadline</code> → explicit structured failure</td><td>unit + live</td></tr>
+        <tr><td>FR-9</td><td>Agent 2 receives <b>only</b> schema-valid brief</td><td>architecture</td></tr>
+        <tr><td>FR-10</td><td><code>POST /generate</code> → <code>validated_brief</code>, <code>creative</code>, <code>meta</code></td><td>API + live</td></tr>
+        <tr><td>FR-11</td><td>Errors carry <code>issues</code>, <code>attempts</code>, <code>fallbacks_applied</code></td><td>API + live</td></tr>
+        <tr><td>FR-12</td><td>Runs offline / deterministically with no key by default</td><td>config + live</td></tr>
+        <tr><td>FR-13</td><td>Output is valid UTF-8 (em dashes, accents preserved)</td><td>live check</td></tr>
+      </table>
+    </div>
+
+    <!-- 11 -->
+    <div class="card" id="s11">
+      <h2><span class="n">11.</span>Non-Functional Requirements</h2>
+      <table>
+        <tr><th>Category</th><th>Requirement</th></tr>
+        <tr><td><b>Reliability</b></td><td>Business-critical fields never auto-invented; failures explicit &amp; structured</td></tr>
+        <tr><td><b>Determinism</b></td><td>Default provider: identical input → identical output</td></tr>
+        <tr><td><b>Performance</b></td><td>Local: sub-second. P99 &lt; 2s with LLM</td></tr>
+        <tr><td><b>Operability</b></td><td>Structured JSON logs; health endpoint; env-driven config</td></tr>
+        <tr><td><b>Testability</b></td><td>Provider-agnostic core → full suite offline (17 tests)</td></tr>
+        <tr><td><b>Security</b></td><td>No secrets in code; key via env; input capped at 5k</td></tr>
+        <tr><td><b>Extensibility</b></td><td>New tones / providers / formats via config or small modules</td></tr>
+      </table>
+    </div>
+
+    <!-- 12 -->
+    <div class="card" id="s12">
+      <h2><span class="n">12.</span>Success Metrics (KPIs)</h2>
+      <table>
+        <tr><th>Metric</th><th>Target</th><th>How measured</th></tr>
+        <tr><td><b>% briefs auto-validated</b></td><td>≥ 90%</td><td><code>meta.validation_attempts</code> / <code>fallbacks_applied</code></td></tr>
+        <tr><td><b>Zero silent failures</b></td><td>100%</td><td>log + 422 audit</td></tr>
+        <tr><td><b>Deadline never fabricated</b></td><td>0 incidents</td><td>schema rule + tests</td></tr>
+        <tr><td><b>Deterministic correctness</b></td><td>17/17 tests</td><td><code>pytest</code> in CI</td></tr>
+        <tr><td><b>API success rate</b></td><td>≥ 99.5%</td><td>server logs</td></tr>
+        <tr><td><b>Brand compliance</b> <span class="pill v11">v1.1+</span></td><td>≥ 98%</td><td>brand-gate audit log</td></tr>
+        <tr><td><b>Accepted-draft rate</b> <span class="pill v11">v1.1+</span></td><td>≥ 70%</td><td>feedback signals (§17)</td></tr>
+        <tr><td><b>Retrain safety</b> <span class="pill v11">v1.1+</span></td><td>0 regressions</td><td>eval harness in CI (golden set)</td></tr>
+      </table>
+    </div>
+
+    <!-- 13 -->
+    <div class="card" id="s13">
+      <h2><span class="n">13.</span>Edge Cases &amp; Decisions Log</h2>
+      <table>
+        <tr><th>#</th><th>Edge case</th><th>Decision</th></tr>
+        <tr><td>EC-1</td><td>"friday" with no date</td><td>Resolve to the <b>next</b> Friday ≥ today (2026-09-11)</td></tr>
+        <tr><td>EC-2</td><td>Past date mentioned</td><td>Reject as past deadline</td></tr>
+        <tr><td>EC-3</td><td>No campaign name</td><td>Fallback "Untitled Campaign" (recorded)</td></tr>
+        <tr><td>EC-4</td><td>No tone given</td><td>Fallback "professional" (recorded)</td></tr>
+        <tr><td>EC-5</td><td>Repair makes no progress</td><td>Stop retrying (no infinite loop)</td></tr>
+        <tr><td>EC-6</td><td>Parser returns <code>{}</code></td><td>422 "no structured data at all"</td></tr>
+        <tr><td>EC-7</td><td>Repair wipes good fields</td><td><b>Merge</b> semantics preserve prior correct fields</td></tr>
+        <tr><td>EC-8</td><td>Unicode output</td><td>UTF-8 end-to-end (verified)</td></tr>
+        <tr><td>EC-9</td><td>Port 8000 blocked</td><td><code>PORT</code> env override in <code>run.py</code></td></tr>
+      </table>
+    </div>
+
+    <!-- 14 -->
+    <div class="card" id="s14">
+      <h2><span class="n">14.</span>Sample Flow Walkthrough <span class="note">(acceptance scenario)</span></h2>
+      <h3>Happy path</h3>
+      <div class="flow">
+        <div class="node gen"><b>Marketer</b><span class="fn">"…new sneaker drop targeting gen z, kinda hype energy, has to be ready by friday."</span></div>
+        <div class="edge">▼ POST /api/v1/generate</div>
+        <div class="node"><b>Agent 1 · Parser</b><span class="fn">parse(raw_brief)</span></div>
+        <div class="edge">▼ dict</div>
+        <div class="node gate"><b>Validation Gate</b><span class="fn">✅ valid on attempt 1 — no repair, no fallback</span></div>
+        <div class="edge">▼ valid brief only</div>
+        <div class="node gen"><b>Agent 2 · Generator</b><span class="fn">generate(valid CreativeBrief)</span></div>
+        <div class="edge">▼</div>
+        <div class="node"><b>Response 200</b><span class="fn">{validated_brief · creative · meta{validation_attempts:1}}</span></div>
+      </div>
+      <p class="note">Outcome: <code>deadline:"2026-09-11"</code> (friday resolved), tone <code>hype</code>,
+      audience <code>Gen Z</code> — draft ready 🎉</p>
+      <h3>Failure path — bad data refused</h3>
+      <div class="flow">
+        <div class="node gen"><b>Client</b><span class="fn">POST {raw_brief:"asdf qwerty zxcvbn…"}  (no usable info)</span></div>
+        <div class="edge">▼</div>
+        <div class="node"><b>Agent 1 · Parser</b><span class="fn">parse → partial / empty fields</span></div>
+        <div class="edge">▼ repair loop × up to PARSER_RETRIES (issues = [deadline required, …])</div>
+        <div class="node gate"><b>Validation Gate</b><span class="fn">fallbacks applied (tone/audience/campaign/key_message) → deadline STILL missing</span></div>
+        <div class="edge">▼</div>
+        <div class="node err"><b>422 brief_validation_failed</b><span class="fn">issues:[deadline] · attempts:3 · fallbacks_applied:[…]</span></div>
+      </div>
+    </div>
+
+    <!-- 15 -->
+    <div class="card" id="s15">
+      <h2><span class="n">15.</span>Test Strategy</h2>
+      <table>
+        <tr><th>Level</th><th>Covers</th><th>Status</th></tr>
+        <tr><td>Unit — parser</td><td>extraction, "friday" resolution, tone synonyms</td><td>✓</td></tr>
+        <tr><td>Unit — validation</td><td>retry/repair, fallback recording, past-deadline rejection</td><td>✓</td></tr>
+        <tr><td>Integration — pipeline</td><td>Agent1 → gate → Agent2 happy path</td><td>✓</td></tr>
+        <tr><td>API — HTTP</td><td><code>POST /generate</code> 200/422, health, UTF-8</td><td>✓</td></tr>
+        <tr><td>Live smoke</td><td>Real server + sample brief (verified)</td><td>✓</td></tr>
+      </table>
+      <p class="note">Run: <code>python -m pytest</code> → <b>17 passed</b> (verified 2026-09-07).</p>
+    </div>
+
+    <!-- 16 -->
+    <div class="card" id="s16" style="border-color:var(--v11)">
+      <h2><span class="n">16.</span>Brand-Guideline Enforcement <span class="pill v11">v1.1 design</span></h2>
+      <blockquote>v1.0 enforces a <b>built-in default brand voice</b>. v1.1 proposes <b>per-brand
+      profiles</b> wired through the same "no silent bad data" ladder.</blockquote>
+      <h3>16.1 What "brand guidelines" means here</h3>
+      <p>Following brand guidelines = every output is <b>on-brand</b> (approved voice &amp; tone),
+      <b>on-message</b> (no banned/unapproved wording), and <b>consistent</b> (brand templates &amp;
+      vocabulary) — enforced as <b>explicit, checkable rules, never a silent hope</b>.</p>
+      <h3>16.2 Already enforced today (v1.0)</h3>
+      <table>
+        <tr><th>Layer</th><th>Brand guardrail</th><th>Location</th></tr>
+        <tr><td>Canonical <code>Tone</code> enum</td><td>Output limited to a fixed approved voice set (9)</td><td><code>app/schemas/brief.py</code></td></tr>
+        <tr><td><code>TONE_SYNONYMS</code></td><td>Brief language normalised to brand vocabulary</td><td><code>app/schemas/brief.py</code></td></tr>
+        <tr><td><code>_KEY_TEMPLATES</code></td><td>Default key messages are pre-approved on-brand copy</td><td><code>app/llm/local.py</code></td></tr>
+        <tr><td><code>_GEN_STYLE</code></td><td>CTAs &amp; hashtags tone-flavoured, on-brand</td><td><code>app/llm/local.py</code></td></tr>
+        <tr><td>Validation gate</td><td>Length, allowed tone, non-past deadline</td><td><code>app/services/validation.py</code></td></tr>
+        <tr><td><code>RunMeta</code></td><td>Audit trail of tone/defaults used</td><td>API response</td></tr>
+      </table>
+      <h3>16.3 Proposed: per-brand profiles (v1.1+)</h3>
+<pre>// brand_profiles/techwear.json
+{
+  "brand_id": "techwear",
+  "display_name": "TechWear Co.",
+  "allowed_tones": ["hype", "edgy", "minimal"],   // reject others
+  "default_tone": "edgy",
+  "banned_words": ["luxury", "premium", "exclusive"],
+  "required_elements": ["drop_date", "limited"],
+  "emoji_policy": "none",
+  "voice_notes": ["short punchy sentences", "second person, imperative"],
+  "templates": { "edgy": "{p}. No rules. {cta}" },  // overrides defaults
+  "fallback_audience": "Gen Z streetwear buyers",
+  "reference_copy": ["approved_example_1.txt", "approved_example_2.txt"]
+}</pre>
+      <h3>16.4 Enforcement pipeline</h3>
+      <div class="flow">
+        <div class="node gen"><b>POST /generate</b><span class="fn">{ raw_brief, brand_id }</span></div>
+        <div class="edge">▼</div>
+        <div class="branch">
+          <div class="col"><div class="node v11node"><b>Load profile</b><span class="fn">brand gate config</span></div></div>
+          <div class="col"><div class="node v11node"><b>Parser</b><span class="fn">tone forced into allowed_tones → else repair → fallback</span></div></div>
+        </div>
+        <div class="edge">▼</div>
+        <div class="branch">
+          <div class="col"><div class="node gate"><b>Schema + BRAND validation</b><span class="fn">banned words · tone · required elements</span></div></div>
+          <div class="col"><div class="node gen"><b>Generator</b><span class="fn">uses brand templates / voice_notes</span></div></div>
+        </div>
+        <div class="edge">▼ pass? ──────────────── ✗ fail</div>
+        <div class="branch">
+          <div class="col"><span class="verdict ok">200 OK</span><div class="node"><b>creative</b></div></div>
+          <div class="col"><span class="verdict fail">422 brand_compliance_failed</span><div class="node err"><b>{ field, brand_rule, message }</b></div></div>
+        </div>
+      </div>
+      <h3>16.5 Brand gate = same escalation ladder as §7</h3>
+      <table>
+        <tr><th>Stage</th><th>Behaviour</th></tr>
+        <tr><td><b>Validate</b></td><td>Run output against profile rules (tone, banned words, required elements, template match)</td></tr>
+        <tr><td><b>Retry</b></td><td>Regenerate once with the specific brand rule that broke</td></tr>
+        <tr><td><b>Fallback</b></td><td>Swap to brand <code>default_tone</code> / safe template</td></tr>
+        <tr><td><b>Surface</b></td><td>If still non-compliant → <b>422 <code>brand_compliance_failed</code></b> — never ship off-brand silently</td></tr>
+      </table>
+      <h3>16.6 Traceable additions (v1.1+)</h3>
+      <table>
+        <tr><th>ID</th><th>Requirement</th></tr>
+        <tr><td>BR-1</td><td>Request may carry <code>brand_id</code>; unknown id → clear 422</td></tr>
+        <tr><td>BR-2</td><td>Output tone must be in the brand's <code>allowed_tones</code></td></tr>
+        <tr><td>BR-3</td><td>No <code>banned_words</code> in generated copy</td></tr>
+        <tr><td>BR-4</td><td>Required elements present or explicitly flagged</td></tr>
+        <tr><td>BR-5</td><td>Every brand decision recorded (audit), never silent</td></tr>
+        <tr><td>BR-6</td><td>Brand rules versioned + tested like code (§17.2)</td></tr>
+      </table>
+    </div>
+
+    <!-- 17 -->
+    <div class="card" id="s17" style="border-color:var(--v11)">
+      <h2><span class="n">17.</span>Retraining &amp; Continuous Learning <span class="pill v11">v1.1 design</span></h2>
+      <blockquote>Honest framing: the default brain is <b>rule/template based — no neural weights to
+      "retrain" classically.</b> So we define <b>two learning regimes</b> picked by data volume &amp;
+      active brain.</blockquote>
+      <h3>17.1 What "retrain" means in each regime</h3>
+      <table>
+        <tr><th>Regime</th><th>Brain</th><th>What "retraining" is</th><th>When to use</th></tr>
+        <tr><td><b>A · Rule curation</b></td><td><code>local</code></td><td>Edit &amp; version knowledge tables/templates</td><td>Default; determinism &amp; auditability needed</td></tr>
+        <tr><td><b>B · Model tuning</b></td><td><code>openai</code></td><td>In-context prompt updates → fine-tuning</td><td>Accepted-example volume grows; richer language</td></tr>
+      </table>
+      <h3>17.2 Regime A — retraining = curated, versioned rule updates</h3>
+      <div class="flow">
+        <div class="node"><b>collect feedback</b></div>
+        <div class="edge">→</div>
+        <div class="node"><b>triage</b><span class="fn">what actually failed</span></div>
+        <div class="edge">→</div>
+        <div class="node"><b>update table / template</b></div>
+        <div class="edge">→</div>
+        <div class="node gate"><b>regression + golden set</b><span class="fn">17+ tests</span></div>
+        <div class="edge">→</div>
+        <div class="node"><b>version bump</b><span class="fn">rules v1.3.0</span></div>
+        <div class="edge">→</div>
+        <div class="node"><b>canary → promote</b></div>
+      </div>
+      <ul>
+        <li><b>Determinism preserved</b> — CI proves no regression on a fixed golden set.</li>
+        <li><b>Every change is a code review</b> — small diffs to tables / <code>brand_profiles/*.json</code>.</li>
+        <li><b>Rollback is a git revert</b> — no model re-download.</li>
+      </ul>
+      <h3>17.3 Regime B — the LLM learning ladder</h3>
+      <table>
+        <tr><th>Rung</th><th>Technique</th><th>What changes</th><th>Data</th><th>Cost/risk</th></tr>
+        <tr><td><b>B1</b></td><td>Prompt update (in-context)</td><td>Few-shot brand examples + rules in P1/P4</td><td>none</td><td>lowest</td></tr>
+        <tr><td><b>B2</b></td><td>Fine-tune</td><td>Model snapshot on labelled pairs</td><td>~100s–1000s examples</td><td>medium; eval + rollback</td></tr>
+        <tr><td><b>B3</b> (later)</td><td>Retrieval / RAG</td><td>Brand docs at request time</td><td>brand corpus</td><td>infra</td></tr>
+      </table>
+      <h3>17.4 The feedback loop</h3>
+      <div class="flow">
+        <div class="node gen"><b>API /generate</b></div>
+        <div class="edge">▼</div>
+        <div class="node"><b>Output to user</b></div>
+        <div class="edge">▼ accepted / edited / rejected ?</div>
+        <div class="branch">
+          <div class="col"><div class="node"><b>accepted → positive signal</b></div></div>
+          <div class="col"><div class="node"><b>edited → edit-delta logged</b></div></div>
+          <div class="col"><div class="node"><b>rejected → negative signal + reason</b></div></div>
+        </div>
+        <div class="edge">▼</div>
+        <div class="node gate"><b>(Labelled dataset)</b></div>
+        <div class="edge">▼ train?</div>
+        <div class="branch">
+          <div class="col"><div class="node"><b>Regime A</b><span class="fn">curate rules + golden tests</span></div></div>
+          <div class="col"><div class="node"><b>Regime B</b><span class="fn">fine-tune snapshot</span></div></div>
+        </div>
+        <div class="edge">▼ eval on golden set</div>
+        <div class="node gate"><b>Eval gate</b><span class="fn">pass → canary release → promote / rollback</span></div>
+      </div>
+      <h3>17.5 Guardrails (non-negotiables)</h3>
+      <ul>
+        <li><b>Human approval gate</b> before any rule/model promotion — no autonomous self-modification in v1.x.</li>
+        <li><b>Never train on unvetted output</b> — only labelled, human-confirmed data.</li>
+        <li><b>Eval before promote</b> — new rule/model must pass golden set + brand compliance or is rolled back.</li>
+        <li><b>Deterministic default stays</b> — offline brain remains the CI/demo baseline.</li>
+        <li><b>Privacy</b> — brand secrets / proprietary copy excluded from fine-tune corpora unless opted in.</li>
+      </ul>
+      <h3>17.6 Minimum data &amp; evaluation</h3>
+      <table>
+        <tr><th>Question</th><th>Answer</th></tr>
+        <tr><td>When is Regime A enough?</td><td>Always, unless quality plateaus on language richness</td></tr>
+        <tr><td>When move to B2 fine-tune?</td><td>≥ ~500 labelled examples AND B1 has plateaued</td></tr>
+        <tr><td>Eval metrics</td><td>Parse accuracy · brand compliance · human acceptance · latency/cost</td></tr>
+        <tr><td>Who approves a release?</td><td>Product/brand owner (rules) + engineering (tests, rollout)</td></tr>
+      </table>
+    </div>
+
+    <!-- 18 -->
+    <div class="card" id="s18">
+      <h2><span class="n">18.</span>Open Questions &amp; Roadmap</h2>
+      <h3>Open questions</h3>
+      <ul>
+        <li>Should a <b>missing deadline</b> be a hard error, or opt-in "no deadline" flag?</li>
+        <li>Do consumers need the raw intermediate <code>parsed</code> dict for debugging?</li>
+        <li>Max acceptable latency when a hosted LLM backs the agents?</li>
+      </ul>
+      <h3>Roadmap — v1.1 (brand &amp; learning)</h3>
+      <ul>
+        <li>✳️ Brand profiles (<code>brand_id</code> → <code>brand_profiles/*.json</code>) + request field (§16)</li>
+        <li>✳️ Brand gate with <code>brand_compliance_failed</code> 422 (§16.5)</li>
+        <li>✳️ Feedback capture — accept / edit / reject signals (§17.4)</li>
+        <li>✳️ Versioned rulebook + golden-set eval harness (§17.2)</li>
+        <li>✳️ Fine-tuning pipeline with eval-before-promote gating (§17.3)</li>
+        <li>✳️ Brand rule editor / dashboard for non-engineers</li>
+      </ul>
+      <h3>Roadmap — later</h3>
+      <ul>
+        <li>✳️ Batch / CSV import · review queue · more output formats</li>
+        <li>✳️ Auth, rate limiting, request IDs / tracing · persistence + dashboard · confidence scores</li>
+      </ul>
+    </div>
+
+    <!-- 19 -->
+    <div class="card" id="s19">
+      <h2><span class="n">19.</span>Appendix — How to Run</h2>
+<pre>python -m pip install -r requirements-dev.txt
+python run.py                      # or: PORT=8001 python run.py
+# Docs:   http://127.0.0.1:8000/docs    (or :8001)
+# Health: http://127.0.0.1:8000/api/v1/health
+python -m pytest                   # 17 tests</pre>
+      <p>Optional hosted brain:</p>
+<pre># .env  (copy from .env.example)
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+pip install -r requirements-optional.txt</pre>
+    </div>
+
+    <footer>PRD · Creative Brief Agent Pipeline · §1–§15 v1.0 implemented · §16–§17 v1.1 design annex ·
+    generated 2026-09-07 · companion doc: <b>prompts.html</b></footer>
+  </main>
+</div>
+</body>
+</html>

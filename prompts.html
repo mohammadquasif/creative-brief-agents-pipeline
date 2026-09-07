@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Inventory — Creative Brief Agent Pipeline</title>
+<style>
+  :root{
+    --bg:#0f1220; --panel:#171b2e; --panel2:#1d2340; --ink:#e7eaf6;
+    --muted:#9aa3c7; --line:#2a3157; --accent:#6c8cff; --accent2:#ff7ac3;
+    --good:#34d399; --warn:#fbbf24; --chip:#242b52;
+    --mono:"Cascadia Code",Consolas,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  header{padding:28px 32px 20px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#141932,#0f1220);}
+  header h1{margin:0 0 6px;font-size:26px;letter-spacing:.2px}
+  header p{margin:4px 0;color:var(--muted);max-width:900px}
+  .badges{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+  .badge{background:var(--chip);border:1px solid var(--line);border-radius:999px;
+    padding:3px 12px;font-size:12.5px;color:var(--ink)}
+  .badge b{color:var(--accent)}
+  .wrap{display:flex;gap:24px;align-items:flex-start;max-width:1400px;margin:0 auto;padding:24px}
+  nav{position:sticky;top:16px;width:270px;flex:0 0 270px;font-size:13.5px}
+  nav .group{font-weight:700;color:var(--accent2);text-transform:uppercase;
+    font-size:11px;letter-spacing:1.2px;margin:14px 0 4px}
+  nav a{display:block;color:var(--muted);text-decoration:none;padding:3px 8px;
+    border-left:2px solid transparent}
+  nav a:hover{color:var(--ink);border-left-color:var(--accent)}
+  main{flex:1;min-width:0}
+  h2{font-size:20px;margin:26px 0 4px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  h2 .n{color:var(--accent2)}
+  .sub{color:var(--muted);font-size:13.5px;margin:2px 0 14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    margin:0 0 16px;overflow:hidden}
+  .card-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;
+    padding:12px 16px;background:var(--panel2);cursor:pointer;user-select:none}
+  .card-head .name{font-weight:700;font-size:15px}
+  .card-head .tag{font-family:var(--mono);font-size:11.5px;color:var(--accent);
+    background:#0d1130;border:1px solid var(--line);padding:2px 8px;border-radius:6px}
+  .chip-line{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;width:100%}
+  .loc{font-family:var(--mono);font-size:12px;color:var(--good)}
+  .file{font-family:var(--mono);font-size:12px;color:var(--warn)}
+  .meta-line{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px;font-size:12.5px;color:var(--muted)}
+  .meta-line span{background:#10142a;border:1px solid var(--line);border-radius:6px;padding:1px 8px}
+  .body{padding:6px 16px 16px}
+  details{background:#10142a;border:1px solid var(--line);border-radius:8px;margin:6px 0}
+  summary{cursor:pointer;padding:8px 12px;color:var(--muted);font-size:12.5px;font-weight:600}
+  pre{font-family:var(--mono);font-size:12.5px;line-height:1.55;color:#d7e3ff;
+    background:#0b0e20;padding:12px 14px;margin:0;overflow-x:auto;white-space:pre-wrap;
+    word-break:break-word;border-top:1px solid var(--line)}
+  .caret{color:var(--muted);margin-left:auto}
+  .empty{color:var(--muted);font-style:italic}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:20px;border-top:1px solid var(--line)}
+  .searchbar{margin:0 0 14px}
+  .searchbar input{width:100%;max-width:420px;background:var(--panel2);border:1px solid var(--line);
+    color:var(--ink);border-radius:8px;padding:8px 12px;font-size:13.5px}
+  .searchbar input:focus{outline:none;border-color:var(--accent)}
+  @media(max-width:960px){ .wrap{flex-direction:column} nav{position:static;width:100%;flex:none} }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧠 Prompt Inventory</h1>
+  <p>Every <b>agent instruction</b>, <b>extraction rule</b> and <b>creative template</b> in the
+  <em>Creative Brief Agent Pipeline</em> — listed with its <b>file name</b> and exact
+  <b>location (path + line)</b>. Generated 2026-09-07.</p>
+  <div class="badges">
+    <span class="badge"><b>15</b> prompt artifacts</span>
+    <span class="badge"><b>2</b> providers · local / openai</span>
+    <span class="badge"><b>2</b> agents · Parser → Generator</span>
+    <span class="badge"><b>1</b> validation gate</span>
+    <span class="badge">Base: <b>MTEST/</b></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav>
+    <div class="group">Index</div>
+    <a href="#sec-a">A · LLM prompts (OpenAI)</a>
+    <a href="#sec-b">B · Local-brain tables &amp; templates</a>
+    <a href="#sec-c">C · Extraction rules (regex)</a>
+    <a href="#sec-d">D · Agents &amp; gate wiring</a>
+    <a href="#flow">Flow at a glance</a>
+    <div class="group">Legend</div>
+    <span style="color:var(--muted);font-size:12.5px">🟢 <span class="loc">location</span> ·
+    🟡 <span class="file">file name</span></span>
+  </nav>
+
+  <main>
+    <div class="searchbar">
+      <input id="q" type="search" placeholder="Filter prompts (e.g. deadline, tone, hashtags)…"
+             oninput="filterCards(this.value)">
+    </div>
+
+    <!-- ============ SECTION A ============ -->
+    <h2 id="sec-a"><span class="n">A.</span> LLM prompts — OpenAI provider</h2>
+    <p class="sub">Verbatim prompts sent to the model when <code>LLM_PROVIDER=openai</code>.
+    File: <span class="file">openai_provider.py</span> · every call uses <code>temperature=0.2</code>
+    and <code>response_format=json_object</code>.</p>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">P1 · Parser — system prompt (Agent 1)</span>
+        <span class="tag">system</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/openai_provider.py</span>
+          <span class="loc">📍 location: lines 78–84 (in <code>parse_brief</code>)</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Used by: <code>parse_brief()</code></span>
+        <span>Role: tells the model to extract structured fields from a messy brief</span>
+      </div>
+      <div class="body">
+        <details open>
+          <summary>Prompt text (verbatim)</summary>
+<pre>"You are a strict structured-data extraction engine for marketing creative briefs.
+Extract the fields listed below, resolve relative deadlines like 'friday' to the next
+occurrence as an ISO date. Be conservative: never invent facts that are not supported
+by the brief. " + _SCHEMA_HINT</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">P2 · Parser — output-schema hint (<code>_SCHEMA_HINT</code>)</span>
+        <span class="tag">const</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/openai_provider.py</span>
+          <span class="loc">📍 location: lines 23–29 (module level)</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Appended to: P1 system prompt</span>
+        <span>Role: constrains the model to return ONLY the 5 JSON fields of <code>CreativeBrief</code></span>
+      </div>
+      <div class="body">
+        <details open>
+          <summary>Prompt text (verbatim)</summary>
+<pre>'Return ONLY a JSON object with optional keys: "campaign_name", "target_audience",
+"key_message", "tone" (one of: hype, luxury, playful, professional, emotional,
+sustainable, retro, minimal, edgy), "deadline" (ISO date YYYY-MM-DD).
+Omit any field you are not confident about.'</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">P3 · Parser — repair / retry prompt (validation feedback)</span>
+        <span class="tag">user</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/openai_provider.py</span>
+          <span class="loc">📍 location: lines 72–76 (inside <code>parse_brief</code>, repair branch)</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Triggered when: a repair pass runs (issues from the validation gate)</span>
+        <span>Role: feeds back the exact field errors so the model fixes ONLY broken fields</span>
+      </div>
+      <div class="body">
+        <details open>
+          <summary>Prompt text (verbatim)</summary>
+<pre># user content = the raw brief, then when issues exist, this is appended:
+
+"\n\nA previous extraction failed validation on these fields.
+Re-read the brief and fix ONLY these fields:\n{problems}"
+
+# where problems = lines like:
+#   - deadline: Field required
+#   - tone: value not recognised</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">P4 · Generator — system prompt (Agent 2)</span>
+        <span class="tag">system</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/openai_provider.py</span>
+          <span class="loc">📍 location: lines 89–96 (in <code>generate_creative</code>)</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Used by: <code>generate_creative()</code></span>
+        <span>User payload: <code>brief.model_dump_json()</code> (the validated brief)</span>
+        <span>Role: creative copywriter producing ad concept + caption + hashtags</span>
+      </div>
+      <div class="body">
+        <details open>
+          <summary>Prompt text (verbatim)</summary>
+<pre>"You are a top-tier creative copywriter. Produce a short creative output from the
+validated brief. Return ONLY JSON with keys: 'ad_concept' (one-liner),
+'social_caption' (short caption for social), 'hashtags' (list of strings)."
+
+# user = the validated CreativeBrief serialised as JSON</pre>
+        </details>
+      </div>
+    </div>
+
+    <!-- ============ SECTION B ============ -->
+    <h2 id="sec-b"><span class="n">B.</span> Local-brain tables &amp; templates (deterministic "prompts")</h2>
+    <p class="sub">The offline brain encodes its "instructions" as data tables &amp; tone templates.
+    Same output every run — no network, no key.</p>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">T1 · Tone → key-message template (<code>_KEY_TEMPLATES</code>)</span>
+        <span class="tag">table</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 111–119</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Used by: <code>_key_message()</code> → Agent-1 output when brief has no explicit message</span>
+        <span>Role: default consumer key-message, flavoured by the detected tone</span>
+      </div>
+      <div class="body">
+        <details>
+          <summary>9 templates (hype → edgy)</summary>
+<pre>HYPE:        "The {p} is live — limited pairs, no restocks. Don't sleep on it."
+LUXURY:      "Introducing the {p} — quietly refined, unmistakably yours."
+PLAYFUL:     "Say hello to the {p} — your new favourite just landed!"
+PROFESSIONAL:"Meet the {p}: engineered to perform, designed to impress."
+EMOTIONAL:   "The {p} you have been waiting for is finally here."
+SUSTAINABLE: "The {p}, made with the planet in mind — feel good, move better."
+RETRO:       "Throw it back with the {p} — the icon is back."
+MINIMAL:     "The {p}. Nothing extra. Everything you need."
+EDGY:        "Break the rules with the {p}. Zero apologies."</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">T2 · Tone → CTA + hashtag style (<code>_GEN_STYLE</code>)</span>
+        <span class="tag">table</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 124–162</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Used by: <code>generate_creative()</code> → Agent-2 output</span>
+        <span>Role: tone-flavoured call-to-action + extra hashtags for the social caption</span>
+      </div>
+      <div class="body">
+        <details>
+          <summary>9 styles (cta + tags)</summary>
+<pre>HYPE:         cta "Don't sleep — cop yours before they're gone."        tags #NewDrop #CopOrMiss
+LUXURY:       cta "An invitation, not an announcement."                 tags #LimitedEdition #Timeless
+PLAYFUL:      cta "Come say hi — you're going to love it."              tags #GoodVibes #NewFavourite
+PROFESSIONAL: cta "Learn more and get in touch today."                  tags #Launch #BuiltToPerform
+EMOTIONAL:    cta "You deserve this one."                               tags #MadeForYou #FeelTheMoment
+SUSTAINABLE:  cta "Make the choice that feels as good as it looks."     tags #MadeResponsibly #BetterFuture
+RETRO:        cta "Back by popular demand."                             tags #Throwback #IconReturns
+MINIMAL:      cta "Now available. Nothing extra."                       tags #SimplyBetter #NowAvailable
+EDGY:         cta "No rules. Just you."                                 tags #NoRules #BreakTheMould</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">T3 · Audience keyword table (<code>_AUDIENCE</code>)</span>
+        <span class="tag">table</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 53–79</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Used by: <code>_parse_audience()</code></span>
+        <span>Role: maps brief keywords/phrases → canonical audience labels (23 entries)</span>
+      </div>
+      <div class="body">
+        <details>
+          <summary>23 audience mappings (excerpt + full list in file)</summary>
+<pre>"gen alpha"→Gen Alpha · "gen z"/"gen-z"/"genz"→Gen Z · "millennials"→Millennials
+"young/working professionals"→…Professionals · "college students"/"college"→College Students
+"students"→Students · "teenagers"/"teens"→Teens · "fitness enthusiasts"→Fitness Enthusiasts
+"parents"/"moms"/"dads"→Parents/Moms/Dads · "athletes"→Athletes · "runners"→Runners
+"gamers"→Gamers · "foodies"→Foodies · "families"→Families · "boomers"→Baby Boomers
++ generic fallback: "targeting &lt;free-text&gt;" regex → Title Case label</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">T4 · Product keyword table (<code>_PRODUCTS</code>)</span>
+        <span class="tag">table</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 81–109</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Used by: <code>_find_product()</code> → names campaigns / drafts key messages</span>
+        <span>Role: keyword → product label (longest/most-specific matched first)</span>
+      </div>
+      <div class="body">
+        <details>
+          <summary>26 product mappings (excerpt)</summary>
+<pre>"new sneaker drop"/"sneaker drop"/"sneakers"/"sneaker" → Sneaker Drop
+"energy drink" → Energy Drink Launch · "headphones" → Headphones Launch
+"smartphone"/"phone" → Smartphone Launch · "streetwear" → Streetwear Drop
+"fragrance"/"perfume"/"cologne" → Fragrance Launch · "skincare" → Skincare Launch
+"clothing" → Clothing Drop · "fashion" → Fashion Collection · "beauty" → Beauty Launch
+"workout"/"fitness" → …Launch · "coffee" → Coffee Launch · "gaming"/"game" → …Launch
+"shoes"/"shoe" → Shoe Launch · "car" → Car Launch · "app" → App Launch</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">T5 · Weekday table (<code>_WEEKDAYS</code>)</span>
+        <span class="tag">table</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 27–35</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Used by: <code>_parse_deadline()</code></span>
+        <span>Role: "friday"/"fri" → weekday index for next-occurrence date math</span>
+      </div>
+      <div class="body">
+        <details>
+          <summary>Full mapping</summary>
+<pre>monday:0 · tuesday:1 · wednesday:2 · thursday:3 · friday:4 · saturday:5 · sunday:6
+(abbreviations mon, tue, tues, wed, thu, thur, thurs, fri, sat, sun all included)</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">T6 · Month table (<code>_MONTHS</code>)</span>
+        <span class="tag">table</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 37–49</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Used by: <code>_parse_deadline()</code></span>
+        <span>Role: "september 11" / "sept 11" → month number for date resolution</span>
+      </div>
+      <div class="body">
+        <details>
+          <summary>Full mapping</summary>
+<pre>january:1 · february:2 · march:3 · april:4 · may:5 · june:6 · july:7 · august:8
+september:9 · october:10 · november:11 · december:12
+(3-letter abbreviations jan, feb, mar, apr, jun, jul, aug, sep, sept, oct, nov, dec included)</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">T7 · Tone synonym table (<code>TONE_SYNONYMS</code>)</span>
+        <span class="tag">table</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/schemas/brief.py</span>
+          <span class="loc">📍 location: lines 32–122</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Used by: schema validator + <code>_parse_tone()</code> in local.py</span>
+        <span>Role: normalises informal phrases ("hype energy", "high end") → 9 canonical tones</span>
+        <span>Canonical set: hype · luxury · playful · professional · emotional · sustainable · retro · minimal · edgy</span>
+      </div>
+      <div class="body">
+        <details>
+          <summary>~90 synonym mappings (excerpt per tone)</summary>
+<pre>HYPE:        "hype energy","hypebeast","hyped","energetic","exciting","excitement",
+             "streetwear","street","dope","fire","lit","buzz","hype"
+LUXURY:      "high end","high-end","luxury","premium","exclusive","sophisticated",
+             "elegant","classy","upscale"
+PLAYFUL:     "light hearted","lighthearted","playful","fun","quirky","whimsical",
+             "cheeky","humorous","humor","funny","cute"
+PROFESSIONAL:"professional","corporate","business","formal","polished",
+             "trustworthy","credible"
+EMOTIONAL:   "emotional","heartfelt","heartwarming","inspiring","inspirational",
+             "moving","touching","warm","sentimental"
+SUSTAINABLE: "sustainable","eco friendly","eco-friendly","environmentally","eco",
+             "green","conscious","organic"
+RETRO:       "old school","old-school","retro","vintage","nostalgic","nostalgia",
+             "throwback","90s"
+MINIMAL:     "minimalist","minimal","understated","simple"
+EDGY:        "edgy","rebellious","disruptive","provocative","bold","raw",
+             "gritty","daring"</pre>
+        </details>
+      </div>
+    </div>
+
+    <!-- ============ SECTION C ============ -->
+    <h2 id="sec-c"><span class="n">C.</span> Extraction rules — the "regex instructions"</h2>
+    <p class="sub">File: <span class="file">app/llm/local.py</span> · these functions encode *how* the
+    deterministic brain reads each field. Each is a mini "instruction" the local Agent-1 follows.</p>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">R1 · Deadline resolution (<code>_parse_deadline</code>)</span>
+        <span class="tag">rule</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 184–231</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Field: <code>deadline</code></span>
+        <span>Precedence: ISO date → "September 11" → MM/DD/YYYY → relative ("next week" / "eow" / "tomorrow" / "today") → plain weekday ("by friday")</span>
+      </div>
+      <div class="body">
+        <details>
+          <summary>Key regex patterns & rules</summary>
+<pre>1) \b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b            → ISO-ish date
+2) "{month} {day}" / "{day} {month}" forms           → month-name date
+3) \b(\d{1,2})/(\d{1,2})/(\d{4})\b (US-friendly)      → numeric date
+4) "next week" → today+7 · "eow/this week/end of week" → next Friday
+   "tomorrow" → today+1 · "today" → today
+5) plain weekday name → next occurrence strictly after today</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">R2 · Tone matching (<code>_parse_tone</code>)</span>
+        <span class="tag">rule</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 233–246</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Field: <code>tone</code></span>
+        <span>Rule: canonical word match first, then longest synonym phrase (so "hype energy" beats "energy")</span>
+      </div>
+      <div class="body">
+        <details><summary>Logic</summary>
+<pre>for canonical in Tone:  if \b{canonical.value}\b in text → return canonical
+for phrase in TONE_SYNONYMS (longest first):  if phrase in text → return its tone</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">R3 · Audience extraction (<code>_parse_audience</code>)</span>
+        <span class="tag">rule</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 248–263</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Field: <code>target_audience</code></span>
+        <span>Rule: keyword table (T3), else "targeting &lt;free text&gt;" regex → Title Case</span>
+      </div>
+      <div class="body">
+        <details><summary>Generic fallback regex</summary>
+<pre>\btarget(?:ing|s|ed)?\s+(?:the\s+|an?\s+|for\s+)?([a-z][a-z0-9 \-']{1,60}?)
+(?=\s*(?:,|\.|$|kinda|with|and|has to|must|ready|by |for ))</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">R4 · Product detection (<code>_find_product</code>)</span>
+        <span class="tag">rule</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 265–271</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Field: (feeds) <code>campaign_name</code> + <code>key_message</code></span>
+        <span>Rule: substring match against T4, longest first</span>
+      </div>
+      <div class="body">
+        <details><summary>Logic</summary>
+<pre>for needle, label in sorted(_PRODUCTS, longest-first):
+    if needle in token → return label</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">R5 · Campaign naming (<code>_campaign_name</code>)</span>
+        <span class="tag">rule</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 273–289</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Field: <code>campaign_name</code></span>
+        <span>Rule: explicit "name it X" / "campaign called X" / "campaign: X" → else "{Product} Campaign"</span>
+      </div>
+      <div class="body">
+        <details><summary>3 naming regexes</summary>
+<pre>(?:name|call|title)\s+(?:it|the campaign|the drop)\s+([A-Za-z0-9][^.,;!?"']{1,60}?)
+campaign\s+(?:called|named|titled)\s+["']?([A-Za-z0-9][^.,;!?"]{1,60})
+(?:campaign|drop|launch)\s*[:]\s*([A-Za-z0-9][^.,;!?"]{1,60})
+→ fallback: f"{product_label} Campaign"</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">R6 · Key-message extraction (<code>_key_message</code>)</span>
+        <span class="tag">rule</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 291–311</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Field: <code>key_message</code></span>
+        <span>Rule: explicit "key message: …" / "message - …" wins → else tone template (T1)</span>
+      </div>
+      <div class="body">
+        <details><summary>Explicit-message regex</summary>
+<pre>(?:key message|message|tagline)\s*[:\-]\s*["']?([^"'\n]{5,300})</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">R7 · Hashtag builder (<code>_hashtags</code>)</span>
+        <span class="tag">rule</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/llm/local.py</span>
+          <span class="loc">📍 location: lines 385–401</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Field: <code>creative.hashtags</code></span>
+        <span>Rule: slug(campaign) + slug(audience) + tone + tone tags (T2), deduped, max 6</span>
+      </div>
+      <div class="body">
+        <details><summary>Composition order</summary>
+<pre>#SneakerDropCampaign (slug of campaign) → #GenZ (slug of audience)
+→ #Hype (tone) → tone extra tags from _GEN_STYLE  |  capped at 6, no duplicates</pre>
+        </details>
+      </div>
+    </div>
+
+    <!-- ============ SECTION D ============ -->
+    <h2 id="sec-d"><span class="n">D.</span> Agents, gate &amp; orchestration wiring</h2>
+    <p class="sub">Where the prompts above are invoked, plus the validation fallback "instructions".</p>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">W1 · Agent 1 — Parser (<code>ParserAgent</code>)</span>
+        <span class="tag">agent</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/agents/parser.py</span>
+          <span class="loc">📍 location: lines 10–26</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Methods: <code>parse(raw_brief)</code> · <code>repair(raw_brief, issues)</code></span>
+        <span>Forwards to provider → OpenAI P1/P2/P3 or local R1–R6</span>
+      </div>
+      <div class="body">
+        <details><summary>Why it exists</summary>
+<pre>Agent 1 extracts fields but does NOT guarantee validity — it leaves gaps
+for the validation layer. This is what enables the retry/repair loop.</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">W2 · Validation gate (<code>ValidationService</code>)</span>
+        <span class="tag">gate</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/services/validation.py</span>
+          <span class="loc">📍 location: lines 60–145 (run loop) · fallback table line 35</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Escalation: validate → retry/repair → fallback defaults → surface error</span>
+        <span>Deadline is intentionally NEVER defaulted</span>
+      </div>
+      <div class="body">
+        <details>
+          <summary>Safe-default "instructions" (<code>_FALLBACKS</code>, line 35)</summary>
+<pre>tone            → "professional"
+target_audience → "General consumers"
+campaign_name   → "Untitled Campaign"
+key_message     → "Something fresh is on the way — stay tuned."
+(no deadline default — missing deadline = explicit 422)</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">W3 · Agent 2 — Generator (<code>GeneratorAgent</code>)</span>
+        <span class="tag">agent</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/agents/generator.py</span>
+          <span class="loc">📍 location: lines 11–22</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Method: <code>generate(brief: CreativeBrief)</code></span>
+        <span>Only ever receives schema-valid data → OpenAI P4 or local T2/T1 + R7</span>
+      </div>
+      <div class="body">
+        <details><summary>Guarantee</summary>
+<pre>Because Agent 2 sits AFTER the gate, it can never build on malformed data.
+Output is re-validated into CreativeOutput before returning.</pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggle(this)">
+        <span class="name">W4 · Orchestration (<code>Pipeline.run</code>)</span>
+        <span class="tag">wiring</span>
+        <div class="chip-line">
+          <span class="file">📄 file: app/services/pipeline.py</span>
+          <span class="loc">📍 location: lines 26–56</span>
+        </div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="meta-line">
+        <span>Order: Parser → Validation gate → Generator</span>
+        <span>Creates meta audit trail (attempts, repair_passes, fallbacks_applied)</span>
+      </div>
+      <div class="body">
+        <details><summary>Sequence</summary>
+<pre>parsed = parser.parse(raw_brief)
+result = validator.run(raw_brief, parsed, parser)   # gate: retry/fallback/error
+creative = generator.generate(result.brief)          # only if result.valid</pre>
+        </details>
+      </div>
+    </div>
+
+    <!-- ============ FLOW ============ -->
+    <h2 id="flow"><span class="n">★</span> Prompt flow at a glance</h2>
+    <div class="card"><div class="body">
+<pre>RAW BRIEF  ──►  [Agent 1 · Parser]          app/agents/parser.py:10
+                    │  provider: local → R1–R6 (local.py)   |  openai → P1/P2/P3 (openai_provider.py)
+                    ▼
+                [VALIDATION GATE]           app/services/validation.py:60
+                    │  retry (P3) → fallback defaults (W2) → or 422
+                    ▼  (valid only)
+                [Agent 2 · Generator]        app/agents/generator.py:11
+                    │  provider: local → T1/T2 + R7 (local.py) |  openai → P4
+                    ▼
+              { validated_brief, creative, meta }   (HTTP 200)</pre>
+    </div></div>
+
+    <footer>Prompt Inventory · Creative Brief Agent Pipeline · app/agents · app/llm · app/services ·
+    app/schemas · generated from source 2026-09-07</footer>
+  </main>
+</div>
+
+<script>
+function toggle(elm){
+  const body = elm.closest('.card').querySelector('.body');
+  body.style.display = body.style.display === 'none' ? '' : 'none';
+}
+function filterCards(q){
+  q = q.toLowerCase();
+  document.querySelectorAll('.card').forEach(card=>{
+    const hay = card.textContent.toLowerCase();
+    card.style.display = hay.includes(q) ? '' : 'none';
+  });
+  document.querySelectorAll('h2').forEach(h=>{
+    let any = false;
+    let n = h.nextElementSibling;
+    while (n && n.tagName !== 'H2'){ if(n.classList && n.classList.contains('card')){ any = true; break; } n = n.nextElementSibling; }
+    h.style.display = any || q === '' ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
